@@ -1,5 +1,5 @@
 # Predicting Labor Income
-## Problem Set 1 — MECA 4107
+## Problem Set 1 — Ms Economía PEG
 
 **Julián Herrera, Andrés Silva y Valentina Vera**  
 Grupo 3 · Big Data and Machine Learning para Economía Aplicada · Universidad de los Andes · 2026-20

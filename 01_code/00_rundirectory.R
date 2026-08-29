@@ -15,7 +15,7 @@
 # - Andres Silva
 # - Valentina Vera
 #
-# Course: MECA 4107 — Big Data and Machine Learning
+# Course: Ms Economía PEG — Big Data and Machine Learning
 #         for Applied Economics, Universidad de los Andes
 ##########################################################
 
