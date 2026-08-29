@@ -1,0 +1,95 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\input{preamble.tex}
+
+\title{Perfil edad--ingreso laboral}
+\subtitle{Problem Set 1 $\cdot$ Secci\'on 1}
+\author{Juli\'an Herrera \and Andr\'es Silva \and Valentina Vera}
+\institute{MECA 4107 $\cdot$ Big Data and Machine Learning para Econom\'ia Aplicada\\ Universidad de los Andes}
+\date{2026-20 $\cdot$ Grupo 3}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+% Mandatory first content slide.
+\begin{frame}{Result overview}
+  \vspace{0.4em}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+      \statblock{\peakuncond}{edad de pico incondicional}{IC bootstrap 95\%: [\peakuncondlo, \peakuncondhi]}
+    \column{0.5\textwidth}
+      \statblock{\peakcond}{edad de pico condicional}{IC bootstrap 95\%: [\peakcondlo, \peakcondhi]}
+  \end{columns}
+  \vspace{1.1em}
+  El perfil es una U invertida, como predice el modelo de capital humano.
+  Condicionar en horas y tipo de ocupaci\'on desplaza el pico pero no elimina la curvatura.
+  \source{Muestra: ocupados de 18 a\~nos o m\'as en Bogot\'a, GEIH 2018. $N=\nsample$. $R^2$ incondicional $=\rtwoageu$; condicional $=\rtwoagec$.}
+\end{frame}
+
+\begin{frame}{Pregunta}
+  \begin{block}{Qu\'e debe responder esta secci\'on}
+    Un modelo de ingreso laboral, \textbf{anclado en el ciclo de vida}, ¿qu\'e le dice a la autoridad tributaria sobre qui\'en podr\'ia estar subdeclarando, y d\'onde se rompe esa predicci\'on?
+  \end{block}
+  \vspace{0.8em}
+  \begin{itemize}
+    \item El perfil edad--ingreso es el primer filtro: a cada edad le corresponde un ingreso \emph{esperable}.
+    \item Un reporte muy por debajo del perfil, dadas las horas y el tipo de ocupaci\'on, es un candidato a auditor\'ia ---no una prueba de evasi\'on.
+    \item La teor\'ia de Ben-Porath implica un pico interior: inversi\'on en capital humano al inicio, depreciaci\'on despu\'es.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{La evidencia descriptiva ya muestra la U invertida}
+  \begin{center}
+    \includegraphics[width=0.92\textwidth]{fig_age_binned_means.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Especificaciones}
+  \begin{align*}
+    \log(w_i) &= \beta_1 + \beta_2 \mathrm{Edad}_i + \beta_3 \mathrm{Edad}_i^2 + u_i \\[4pt]
+    \log(w_i) &= \beta_1 + \beta_2 \mathrm{Edad}_i + \beta_3 \mathrm{Edad}_i^2 + \gamma \mathrm{Horas}_i + \delta' \mathrm{Relab}_i + u_i
+  \end{align*}
+  \vspace{0.3em}
+  \begin{itemize}
+    \item Pico impl\'icito: $\mathrm{edad}^*=-\beta_2/(2\beta_3)$, si $\beta_3<0$.
+    \item Intervalo de confianza por \textbf{bootstrap} de la muestra ($R=1000$), no por delta method: $\mathrm{edad}^*$ es no lineal en los coeficientes.
+    \item Horas y \texttt{relab} son los \emph{\'unicos} controles, como pide el enunciado. Capturan el margen intensivo y la posici\'on ocupacional.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Estimaci\'on: pico, intervalo y ajuste}
+  \begin{center}
+    \footnotesize
+    \input{../02_outputs/tables/tab_age_income_peaks.tex}
+  \end{center}
+  \vspace{0.6em}
+  \begin{itemize}
+    \item Ambos picos caen \textbf{dentro} del rango de edad observado. El perfil no es solo creciente.
+    \item Condicionar en horas y tipo de ocupaci\'on cambia el pico: parte del perfil crudo es composici\'on (qui\'en trabaja m\'as horas a cada edad).
+    \item El $R^2$ sigue siendo bajo. La edad organiza el ingreso; no lo determina.
+  \end{itemize}
+  \source{Errores est\'andar anal\'iticos en el repositorio. IC del pico: bootstrap i.i.d., 1000 r\'eplicas.}
+\end{frame}
+
+\begin{frame}{Perfiles predichos}
+  \begin{center}
+    \includegraphics[width=0.92\textwidth]{fig_age_profiles_cop.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Lectura para la autoridad tributaria}
+  \begin{itemize}
+    \item Un asalariado de 30 a\~nos y uno de 50 \textbf{no} deber\'ian compararse con la misma referencia. El modelo da la referencia por edad.
+    \item Condicionar en horas evita marcar como ``subdeclarante'' a quien trabaja medio tiempo.
+    \item Condicionar en \texttt{relab} evita confundir cuenta propia con asalariado privado.
+    \item Lo que el modelo \textbf{no} ve ---educaci\'on, formalidad, estrato--- aparece en el residual. Ah\'i es donde la Secci\'on 3 mide el error de predicci\'on.
+  \end{itemize}
+  \vspace{0.8em}
+  \begin{block}{Takeaway}
+    El pico a los \peakuncond\ a\~nos (IC [\peakuncondlo, \peakuncondhi]) es el hecho descriptivo. El perfil condicional lo desplaza a \peakcond, pero conserva la U invertida. La autoridad puede usar esa forma; no puede usarla sola.
+  \end{block}
+\end{frame}
+
+\end{document}

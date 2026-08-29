@@ -1,0 +1,60 @@
+% Shared Beamer setup for MECA 4107, Problem Set 1, Team 3.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{hyperref}
+
+\graphicspath{{../02_outputs/figures/}}
+\input{../02_outputs/tables/results_macros.tex}
+
+\definecolor{navy}{HTML}{1B365D}
+\definecolor{accent}{HTML}{B85C38}
+\definecolor{slate}{HTML}{5B6B73}
+\definecolor{gold}{HTML}{C4A35A}
+\definecolor{ice}{HTML}{F4F6F8}
+
+\setbeamercolor{structure}{fg=navy}
+\setbeamercolor{frametitle}{fg=navy,bg=white}
+\setbeamercolor{title}{fg=navy}
+\setbeamercolor{subtitle}{fg=slate}
+\setbeamercolor{author}{fg=slate}
+\setbeamercolor{institute}{fg=slate}
+\setbeamercolor{date}{fg=slate}
+\setbeamercolor{item}{fg=accent}
+\setbeamercolor{footline}{fg=slate}
+\setbeamercolor{normal text}{fg=navy}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}[circle]
+\setbeamerfont{frametitle}{series=\bfseries,size=\large}
+\setbeamerfont{title}{series=\bfseries,size=\LARGE}
+
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.55\paperwidth,ht=2.4ex,dp=1.2ex,leftskip=1em]{footline}
+      \tiny Grupo 3 $\cdot$ MECA 4107 $\cdot$ Universidad de los Andes
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.45\paperwidth,ht=2.4ex,dp=1.2ex,rightskip=1em,right]{footline}
+      \tiny \insertframenumber/\inserttotalframenumber
+    \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\newcommand{\statblock}[3]{%
+  \begin{tikzpicture}
+    \node[fill=ice, inner sep=10pt, text width=0.42\textwidth, align=center] {
+      {\fontsize{20}{24}\selectfont\bfseries\color{navy} #1}\\[4pt]
+      {\small\color{slate} #2}\\[2pt]
+      {\scriptsize\color{accent} #3}
+    };
+  \end{tikzpicture}%
+}
+
+\newcommand{\source}[1]{\vfill{\scriptsize\color{slate} #1}}

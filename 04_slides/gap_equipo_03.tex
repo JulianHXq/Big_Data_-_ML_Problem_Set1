@@ -1,0 +1,102 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\input{preamble.tex}
+
+\title{Brecha de g\'enero en ingreso laboral}
+\subtitle{Problem Set 1 $\cdot$ Secci\'on 2}
+\author{Juli\'an Herrera \and Andr\'es Silva \and Valentina Vera}
+\institute{MECA 4107 $\cdot$ Big Data and Machine Learning para Econom\'ia Aplicada\\ Universidad de los Andes}
+\date{2026-20 $\cdot$ Grupo 3}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\begin{frame}{Result overview}
+  \vspace{0.3em}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+      \statblock{\gapuncondabs\%}{menos ingreso (mujeres)}{brecha incondicional}
+    \column{0.5\textwidth}
+      \statblock{\gapprefabs\%}{brecha preferida}{edad, educaci\'on, horas y relab}
+  \end{columns}
+  \vspace{0.9em}
+  Capital humano \textbf{ampl\'ia} la brecha (de \gapuncondabs\% a \gaphcabs\%): las mujeres de la muestra son, en promedio, m\'as educadas, as\'i que no controlar educaci\'on subestima $\beta$.
+  Horas y tipo de ocupaci\'on la comprimen hasta \gapprefabs\%. Esa ca\'ida s\'i puede ser un bad control.
+  Picos: hombres \peakmen\ (IC [\peakmenlo, \peakmenhi]); mujeres \peakwomen\ (IC [\peakwomenlo, \peakwomenhi]).
+  \source{Coeficiente preferido $=\gapcoef$ (EE anal\'itico $\gapse$; EE bootstrap FWL $\gapseboot$). $N=\nsample$.}
+\end{frame}
+
+\begin{frame}{Pregunta y decisi\'on metodol\'ogica}
+  \begin{block}{La elecci\'on de controles es el resultado de esta secci\'on}
+    ¿Cu\'anto de la brecha sobrevive cuando condicionamos en caracter\'isticas que una autoridad tributaria observa, y cu\'ales de esas caracter\'isticas no deber\'iamos condicionar si el objeto es la brecha \emph{causal}?
+  \end{block}
+  \vspace{0.5em}
+  \begin{itemize}
+    \item \textbf{Buenos controles:} edad y educaci\'on. Est\'an (en gran parte) determinadas antes del salario corriente.
+    \item \textbf{Controles discutibles:} horas y \texttt{relab}. Pueden ser el canal de la brecha (selecci\'on a tiempo parcial, segregaci\'on ocupacional).
+    \item \textbf{Malos controles claros:} formalidad y tama\~no de firma, si el inter\'es es discriminaci\'on. \'Utiles si el inter\'es es predicci\'on.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{La brecha no es un artefacto de un solo nivel educativo}
+  \begin{center}
+    \includegraphics[width=0.92\textwidth]{fig_gap_by_education.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Especificaciones}
+  \begin{align*}
+    \log(w_i) &= \alpha + \beta \, \mathrm{Mujer}_i + u_i \\[2pt]
+    \log(w_i) &= \alpha + \beta \, \mathrm{Mujer}_i + f(\mathrm{Edad}_i) + \gamma' \mathrm{Educ}_i + u_i \\[2pt]
+    \log(w_i) &= \alpha + \beta \, \mathrm{Mujer}_i + f(\mathrm{Edad}_i) + \gamma' \mathrm{Educ}_i + \theta \, \mathrm{Horas}_i + \delta' \mathrm{Relab}_i + u_i
+  \end{align*}
+  \vspace{0.2em}
+  \begin{itemize}
+    \item $\beta$ se reporta tambi\'en como $100(e^{\beta}-1)$: diferencia porcentual aproximada.
+    \item Especificaci\'on preferida: capital humano \emph{m\'as} horas y \texttt{relab}. Es la m\'as \'util para fiscalizaci\'on; no es la m\'as limpia para causalidad.
+    \item FWL: el mismo $\beta$ se obtiene residualizando $\log(w)$ y $\mathrm{Mujer}$ respecto a los controles.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{La brecha se comprime, no desaparece}
+  \begin{center}
+    \footnotesize
+    \resizebox{0.98\textwidth}{!}{\input{../02_outputs/tables/tab_gender_gap.tex}}
+  \end{center}
+  \source{EE bootstrap solo en la especificaci\'on preferida, v\'ia FWL. El resto usa EE anal\'iticos OLS.}
+\end{frame}
+
+\begin{frame}{FWL recupera el mismo coeficiente}
+  \begin{center}
+    \footnotesize
+    \resizebox{0.98\textwidth}{!}{\input{../02_outputs/tables/tab_fwl_check.tex}}
+  \end{center}
+  \vspace{0.7em}
+  \begin{itemize}
+    \item FWL no cambia la interpretaci\'on: $\beta$ sigue siendo la diferencia en log ingreso \emph{dentro} de la variaci\'on de ``mujer'' que no es linealmente explicada por los controles.
+    \item El EE bootstrap es un chequeo de infencia, no un estimador distinto.
+    \item Si FWL y OLS no coincidieran, habr\'ia un error de implementaci\'on. Coinciden.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Perfiles por g\'enero, especificaci\'on preferida}
+  \begin{center}
+    \includegraphics[width=0.92\textwidth]{fig_gap_profiles_cop.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Lectura}
+  \begin{itemize}
+    \item Una autoridad que ignore el g\'enero va a \textbf{sobrepredecir} el ingreso de las mujeres y marcarlas como subdeclarantes con m\'as frecuencia. Eso no es neutral.
+    \item Una autoridad que condicione en ocupaci\'on ``explica'' parte de la brecha con segregaci\'on. Para auditor\'ia puede ser correcto; para equidad, no.
+    \item Los picos distintos (\peakmen\ vs.\ \peakwomen) implican que el ciclo de vida no es el mismo. Un perfil \'unico por edad es una mala regla para ambos grupos.
+  \end{itemize}
+  \vspace{0.5em}
+  \begin{block}{Takeaway}
+    La brecha incondicional es \gapuncondabs\%. Condicionar en educaci\'on la sube a \gaphcabs\% (efecto supresor). Con horas y tipo de ocupaci\'on queda en \gapprefabs\%. El n\'umero del informe depende de si el objeto es causalidad o predicci\'on. Nosotros reportamos la secuencia y usamos la especificaci\'on preferida para la DIAN.
+  \end{block}
+\end{frame}
+
+\end{document}
