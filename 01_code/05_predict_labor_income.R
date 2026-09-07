@@ -22,6 +22,7 @@ align_to_train <- function(newdata, train) {
   }
   newdata
 }
+###
 
 db_train <- geih |> filter(bin_train == 1) |> drop_unused_levels()
 db_valid <- geih |> filter(bin_train == 0) |> align_to_train(db_train)
