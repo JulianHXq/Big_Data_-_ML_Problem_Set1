@@ -10,7 +10,7 @@
 \usepackage{tikz}
 \usepackage{hyperref}
 
-\graphicspath{{../02_outputs/figures/}}
+\graphicspath{{../02_outputs/figures/}{img/}{./}}
 \input{../02_outputs/tables/results_macros.tex}
 
 \definecolor{navy}{HTML}{1B365D}
@@ -34,6 +34,45 @@
 \setbeamertemplate{itemize items}[circle]
 \setbeamerfont{frametitle}{series=\bfseries,size=\large}
 \setbeamerfont{title}{series=\bfseries,size=\LARGE}
+
+% Escudo Uniandes: portada y esquina superior derecha de cada diapositiva.
+\newcommand{\uniandeslogo}[1][0.92cm]{\includegraphics[height=#1]{logo_uniandes.png}}
+
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \vspace{0.18cm}%
+  \leavevmode
+  \hbox to \textwidth{%
+    \begin{minipage}[c]{0.88\textwidth}
+      \raggedright
+      \usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\insertframetitle
+    \end{minipage}%
+    \hfil
+    \raisebox{-0.12cm}{\uniandeslogo[0.72cm]}%
+  }%
+  \vspace{0.12cm}%
+}
+
+\setbeamertemplate{title page}{%
+  \vbox{}
+  \vspace{0.15cm}
+  \begin{flushright}
+    \uniandeslogo[1.15cm]
+    \hspace{0.08cm}
+  \end{flushright}
+  \vspace{0.55cm}
+  \begin{center}
+    {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}
+    \vspace{0.45em}
+    {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}
+    \vspace{1.15em}
+    {\usebeamerfont{author}\insertauthor\par}
+    \vspace{0.55em}
+    {\usebeamerfont{institute}\insertinstitute\par}
+    \vspace{0.85em}
+    {\usebeamerfont{date}\insertdate\par}
+  \end{center}
+}
 
 \setbeamertemplate{footline}{
   \leavevmode%

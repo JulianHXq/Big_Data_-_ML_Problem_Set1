@@ -1,11 +1,8 @@
 ##########################################################
 # 00_setup.R
+# Cargar los paquetes, resuelve conflictos de nombres y define
 #
-# Loads packages, resolves namespace conflicts, and defines
-# project-wide paths and plotting defaults.
-#
-# This script does not produce outputs. It is sourced by
-# 00_rundirectory.R before any other file.
+# 00_rundirectory.R antes que otros codigos.
 ##########################################################
 
 if (!require(pacman)) {
@@ -49,12 +46,13 @@ dir.create(path_figures, recursive = TRUE, showWarnings = FALSE)
 dir.create(path_tables, recursive = TRUE, showWarnings = FALSE)
 dir.create(path_slides, recursive = TRUE, showWarnings = FALSE)
 
-# Course colour (session 01 histogram) plus a muted complement.
+# Colores para los graficos de la entrega del Set problem 1.
 col_navy   <- "#3a5e8c"
 col_terra  <- "#b85c38"
 col_slate  <- "#5b6b73"
 col_gold   <- "#c4a35a"
 
+# Definir un tema de ggplot2 para los graficos de la entrega del Set problem 1.
 theme_bdml <- function(base_size = 12) {
   theme_classic(base_size = base_size) +
     theme(
