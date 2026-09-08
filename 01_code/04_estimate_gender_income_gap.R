@@ -4,231 +4,418 @@
 # Section 2. Unconditional and conditional gender gaps.
 # The control set is a modelling choice: we start with
 # predetermined human-capital variables and then add job
-# attributes, flagging the latter as potential bad
-# controls. The preferred gender coefficient is recovered
-# by OLS and by Frisch-Waugh-Lovell, with analytical and
-# bootstrap standard errors.
+# attributes. The preferred specification for the tax-
+# authority's prediction problem (M6) includes job
+# attributes as legitimate predictors, even though they
+# are flagged as potential bad controls for the causal
+# interpretation of the gender coefficient. The gender
+# coefficient is recovered by OLS and by Frisch-Waugh-
+# Lovell, with analytical and bootstrap standard errors.
 #
 # Outputs: figures and .tex tables used by gap_equipo_03.
 ##########################################################
 
-f_gap_uncond <- num_log_income ~ bin_female
-f_gap_hc     <- num_log_income ~ bin_female + num_age + num_age2 + cat_educ
-f_gap_pref   <- num_log_income ~ bin_female + num_age + num_age2 + cat_educ +
-  num_hours + cat_relab
-f_gap_job    <- num_log_income ~ bin_female + num_age + num_age2 + cat_educ +
-  num_hours + cat_relab + bin_formal + cat_size_firm
+# 0) Descriptive statistics ---------------------------------------------------
 
-m_gap_uncond <- lm(f_gap_uncond, data = geih)
-m_gap_hc     <- lm(f_gap_hc, data = geih)
-m_gap_pref   <- lm(f_gap_pref, data = geih)
-m_gap_job    <- lm(f_gap_job, data = geih)
+# Before any estimation, we obtain descriptive statistics to motivate the
+# analysis. Here: a visual and tabular comparison of income by gender.
 
-# FWL on the preferred specification. The residual-on-
-# residual coefficient must match the OLS female coefficient.
-f_controls_pref <- ~ num_age + num_age2 + cat_educ + num_hours + cat_relab
-m_fwl_pref <- fwl_gender(geih, f_controls_pref)
-fwl_coef <- unname(coef(m_fwl_pref)[["x_tilde"]])
-ols_coef <- unname(coef(m_gap_pref)[["bin_female"]])
-ols_se   <- unname(sqrt(diag(vcov(m_gap_pref)))[["bin_female"]])
+# Create a non-numeric (text) gender variable
+geih <- geih |>
+  mutate(cat_gender = ifelse(bin_female == 1, "Mujer", "Hombre"))
 
-message("Bootstrapping FWL standard error (Section 2)...")
-fwl_se_boot <- bootstrap_fwl_se(geih, f_controls_pref)
-
-# Gender-specific life-cycle profiles, preferred controls.
-f_gap_profile <- num_log_income ~ bin_female * (num_age + num_age2) +
-  cat_educ + num_hours + cat_relab
-m_gap_profile <- lm(f_gap_profile, data = geih)
-peaks_g <- peaks_by_gender(m_gap_profile)
-
-message("Bootstrapping gender-specific peak ages (Section 2)...")
-ci_g <- bootstrap_peaks_by_gender(geih, f_gap_profile)
-
-pct <- function(b) 100 * (exp(b) - 1)
-
-gap_table <- tibble(
-  Specification = c(
-    "Unconditional",
-    "Human capital (age, education)",
-    "Preferred (add hours and employment type)",
-    "Job attributes (add formality and firm size)"
-  ),
-  `Female coefficient` = c(
-    coef(m_gap_uncond)[["bin_female"]],
-    coef(m_gap_hc)[["bin_female"]],
-    coef(m_gap_pref)[["bin_female"]],
-    coef(m_gap_job)[["bin_female"]]
-  ),
-  `Analytical SE` = c(
-    sqrt(diag(vcov(m_gap_uncond)))[["bin_female"]],
-    sqrt(diag(vcov(m_gap_hc)))[["bin_female"]],
-    ols_se,
-    sqrt(diag(vcov(m_gap_job)))[["bin_female"]]
-  ),
-  `Bootstrap SE` = c(NA_real_, NA_real_, fwl_se_boot, NA_real_),
-  `Gap in percent` = pct(c(
-    coef(m_gap_uncond)[["bin_female"]],
-    coef(m_gap_hc)[["bin_female"]],
-    coef(m_gap_pref)[["bin_female"]],
-    coef(m_gap_job)[["bin_female"]]
-  )),
-  `R2` = c(
-    summary(m_gap_uncond)$r.squared,
-    summary(m_gap_hc)$r.squared,
-    summary(m_gap_pref)$r.squared,
-    summary(m_gap_job)$r.squared
-  ),
-  N = c(nobs(m_gap_uncond), nobs(m_gap_hc), nobs(m_gap_pref), nobs(m_gap_job))
-)
-
-gap_tex <- gap_table |>
-  mutate(
-    `Female coefficient` = fmt_num(`Female coefficient`, 3),
-    `Analytical SE` = fmt_num(`Analytical SE`, 3),
-    `Bootstrap SE` = ifelse(is.na(`Bootstrap SE`), "---", fmt_num(`Bootstrap SE`, 3)),
-    `Gap in percent` = fmt_num(`Gap in percent`, 1),
-    `R$^2$` = fmt_num(`R2`, 3),
-    N = fmt_num(N, 0)
-  ) |>
-  select(Specification, `Female coefficient`, `Analytical SE`, `Bootstrap SE`,
-         `Gap in percent`, `R$^2$`, N)
-
-write_booktabs(gap_tex, file.path(path_tables, "tab_gender_gap.tex"), align = "lcccccc")
-
-modelsummary(
-  list(
-    "Unconditional" = m_gap_uncond,
-    "Human capital" = m_gap_hc,
-    "Preferred" = m_gap_pref,
-    "Job attributes" = m_gap_job
-  ),
-  output = file.path(path_tables, "tab_gender_gap_coefs.tex"),
-  stars = c("*" = 0.1, "**" = 0.05, "***" = 0.01),
-  gof_map = c("nobs", "r.squared", "adj.r.squared"),
-  coef_omit = "cat_relab|cat_educ|cat_size_firm",
-  coef_rename = c(
-    "(Intercept)" = "Intercept",
-    bin_female = "Female",
-    num_age = "Age",
-    num_age2 = "Age squared",
-    num_hours = "Weekly hours",
-    bin_formal = "Formal"
-  ),
-  fmt = 3,
-  notes = "Education, employment-type, and firm-size indicators omitted from the display. Full estimates in the repository."
-)
-
-fwl_check <- tibble(
-  `OLS female coefficient` = fmt_num(ols_coef, 6),
-  `FWL coefficient` = fmt_num(fwl_coef, 6),
-  `Analytical SE` = fmt_num(ols_se, 4),
-  `FWL bootstrap SE` = fmt_num(fwl_se_boot, 4),
-  `Absolute difference` = fmt_num(abs(ols_coef - fwl_coef), 8)
-)
-write_booktabs(fwl_check, file.path(path_tables, "tab_fwl_check.tex"), align = "ccccc")
-
-peak_gender_tex <- tibble(
-  Group = c("Men", "Women"),
-  `Peak age` = c(fmt_num(peaks_g$peak_men, 1), fmt_num(peaks_g$peak_women, 1)),
-  `95\\% bootstrap CI` = c(
-    paste0("[", fmt_num(ci_g$men[1], 1), ", ", fmt_num(ci_g$men[2], 1), "]"),
-    paste0("[", fmt_num(ci_g$women[1], 1), ", ", fmt_num(ci_g$women[2], 1), "]")
+# Table of descriptive statistics of income by gender
+tab_income_by_gender <- geih |>
+  group_by(cat_gender) |>
+  summarise(
+    num_n           = n(),
+    num_mean_log    = mean(num_log_income, na.rm = TRUE),
+    num_sd_log      = sd(num_log_income, na.rm = TRUE),
+    num_mean_income = mean(num_income, na.rm = TRUE),
+    .groups = "drop"
   )
-)
-write_booktabs(peak_gender_tex, file.path(path_tables, "tab_gender_peaks.tex"), align = "lcc")
 
-saveRDS(list(
-  uncond = m_gap_uncond,
-  hc = m_gap_hc,
-  pref = m_gap_pref,
-  job = m_gap_job,
-  fwl = m_fwl_pref,
-  profile = m_gap_profile,
-  gap_table = gap_table,
-  fwl_coef = fwl_coef,
-  fwl_se_boot = fwl_se_boot,
-  ols_coef = ols_coef,
-  ols_se = ols_se,
-  peaks = peaks_g,
-  ci_peaks = ci_g
-), file.path(path_temp, "section2_models.rds"))
+tab_income_by_gender
 
-# Descriptive motivation: the raw gap is not an artefact of
-# a handful of ages or of part-time work alone.
-fig_gap_by_educ <- geih |>
-  mutate(sex = if_else(bin_female == 1, "Women", "Men")) |>
-  group_by(cat_educ, sex) |>
-  summarise(mean_income = mean(num_income), .groups = "drop") |>
-  ggplot(aes(x = cat_educ, y = mean_income / 1e6, fill = sex)) +
-  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-  scale_fill_manual(values = c("Men" = col_navy, "Women" = col_terra)) +
+# Density plot of log-income by gender
+cat_gender_colors <- c("Hombre" = "#0072B2", "Mujer" = "#CC79A7")  # Colour assigned to each gender
+
+# Plot the density
+fig_income_density <- geih |>
+  ggplot(aes(x = num_log_income, fill = cat_gender, color = cat_gender)) +
+  geom_density(alpha = 0.35, linewidth = 0.8) +
+  scale_fill_manual(values = cat_gender_colors) +
+  scale_color_manual(values = cat_gender_colors) +
+  coord_cartesian(xlim = c(9, 17)) +
   labs(
-    title = "Mean monthly labour income by education and gender",
-    x = "Highest educational attainment",
-    y = "Mean monthly labour income (million COP)",
-    caption = "Source: Own calculations, GEIH 2018 (Bogotá sample)."
+    x = "Log(ingreso laboral mensual)", y = "Densidad",
+    fill = "Género", color = "Género",
+    title = "Distribución del ingreso laboral por género",
+    caption = "Fuente: GEIH 2018, Bogotá."
   ) +
-  theme(axis.text.x = element_text(angle = 25, hjust = 1))
+  theme_classic() +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold", margin = margin(b = 10)),
+    plot.caption = element_text(hjust = 0.5, size = 8, color = "grey40", margin = margin(t = 12))
+  )
 
-ggsave(file.path(path_figures, "fig_gap_by_education.pdf"), fig_gap_by_educ,
+ggsave(file.path(path_figures, "fig_gap_income_density.pdf"), fig_income_density,
        width = 7.2, height = 4.4)
-ggsave(file.path(path_figures, "fig_gap_by_education.png"), fig_gap_by_educ,
+ggsave(file.path(path_figures, "fig_gap_income_density.png"), fig_income_density,
        width = 7.2, height = 4.4, dpi = 300)
 
-modal_relab <- names(sort(table(geih$cat_relab), decreasing = TRUE))[1]
-median_hours <- median(geih$num_hours)
-modal_educ <- names(sort(table(geih$cat_educ), decreasing = TRUE))[1]
+fig_income_density
 
-grid_g <- expand.grid(
-  num_age = seq(18, 80, by = 1),
+# 1) First, we estimate the unconditional gap ----------------------------------
+
+# Define the formula
+f_gap_uncond <- num_log_income ~ bin_female
+
+# Estimate the model
+m_gap_uncond <- lm(f_gap_uncond, data = geih)
+
+# Check the result - can be removed later
+summary(m_gap_uncond)
+
+# 2) Next, we estimate the conditional gap -------------------------------------
+
+# For this part, we test several models, starting with the simplest and
+# moving to more complex ones. Here we classify the controls available to
+# us, following Cinelli, Forney, Pearl (2022) as a reference.
+
+# Nodes: position and role (X, Z, or Y) within each pattern
+nodes <- tribble(
+  ~cat_pattern,                ~cat_role, ~num_x, ~num_y,
+  "1. Neutral",        "X",       1,      0.0,
+  "1. Neutral",        "Y",       3,      0.0,
+  "1. Neutral",        "Z",       2,      1.3,
+  "2. Mediador",        "X",       1,      0.0,
+  "2. Mediador",        "Z",       2,      0.0,
+  "2. Mediador",        "Y",       3,      0.0,
+  "3. Colisionador",    "X",       1,      1.0,
+  "3. Colisionador",    "Y",       3,      1.0,
+  "3. Colisionador",    "Z",       2,      0.0,
+  "4. Modificador", "Z",       2,      1.3,
+  "4. Modificador", "X",       1,      0.0,
+  "4. Modificador", "Y",       3,      0.0
+) |>
+  mutate(cat_pattern = fct_inorder(cat_pattern))
+
+# Arrows between nodes
+edges <- tribble(
+  ~cat_pattern,                ~num_x, ~num_y, ~num_xend, ~num_yend, ~cat_line,
+  "1. Neutral",         1,     0.0,    3,         0.0,       "solid",
+  "1. Neutral",         2,     1.15,   2.85,      0.12,      "solid",
+  "2. Mediador",         1,     0.0,    1.85,      0.0,       "solid",
+  "2. Mediador",         2.15,  0.0,    3,         0.0,       "solid",
+  "3. Colisionador",     1.15,  0.9,    1.85,      0.12,      "solid",
+  "3. Colisionador",     2.85,  0.9,    2.15,      0.12,      "solid",
+  "4. Modificador",  1,     0.0,    3,         0.0,       "solid",
+  "4. Modificador",  2,     1.15,   2,         0.15,      "dashed"
+) |>
+  mutate(cat_pattern = fct_inorder(cat_pattern))
+
+# Which real variables fall into each pattern
+captions <- tribble(
+  ~cat_pattern,                ~str_caption,                          ~str_verdict,
+  "1. Neutral",        "edad, estrato",                       "Bueno para causalidad y predicción",
+  "2. Mediador",        "educ., horas, ocupación, formalidad", "Malo para causalidad, bueno para predicción",
+  "3. Colisionador",    "jefe de hogar",                       "Malo para causalidad y predicción",
+  "4. Modificador", "menores en el hogar",                 "Requiere modelar la interacción"
+) |>
+  mutate(cat_pattern = fct_inorder(cat_pattern))
+
+# Only the Z node is coloured by verdict; X and Y stay neutral
+cat_pattern_colors <- c(
+  "1. Neutral"         = "#3B8BD4",
+  "2. Mediador"         = "#D85A30",
+  "3. Colisionador"     = "#E24B4A",
+  "4. Modificador"  = "#D4537E"
+)
+
+nodes <- nodes |>
+  mutate(cat_fill = if_else(cat_role == "Z", as.character(cat_pattern), "generic"))
+
+fig_causal_diagram <- ggplot() +
+  geom_segment(
+    data = edges,
+    aes(x = num_x, y = num_y, xend = num_xend, yend = num_yend, linetype = cat_line),
+    arrow = arrow(length = unit(0.22, "cm"), type = "closed"),
+    linewidth = 0.6, color = "grey30"
+  ) +
+  geom_label(
+    data = nodes,
+    aes(x = num_x, y = num_y, label = cat_role, fill = cat_fill),
+    color = "white", fontface = "bold", size = 5,
+    label.size = 0, label.padding = unit(0.3, "lines")
+  ) +
+  geom_text(
+    data = captions,
+    aes(x = 2, y = -0.4, label = str_caption),
+    size = 3.2, color = "grey30"
+  ) +
+  geom_text(
+    data = captions,
+    aes(x = 2, y = -0.68, label = str_verdict),
+    size = 3, color = "grey15", fontface = "italic"
+  ) +
+  scale_fill_manual(values = c(cat_pattern_colors, generic = "grey70"), guide = "none") +
+  scale_linetype_manual(values = c(solid = "solid", dashed = "dashed"), guide = "none") +
+  coord_cartesian(xlim = c(0.5, 3.5), ylim = c(-1.0, 1.6)) +
+  facet_wrap(~ cat_pattern, ncol = 2) +
+  labs(
+    title = "Clasificación de controles candidatos para la brecha de género",
+    caption = "Fuente: Cinelli, C., Forney, A., & Pearl, J. (2022). A Crash Course in Good and Bad Controls.\nJournal of Sociological Methods and Research (Technical Report R-493)."
+  ) +
+  theme_void() +
+  theme(
+    strip.text   = element_text(face = "bold", size = 11),
+    plot.title   = element_text(hjust = 0.5, face = "bold", margin = margin(b = 10)),
+    plot.caption = element_text(hjust = 0.5, size = 8, color = "grey40", margin = margin(t = 12)),
+    plot.margin  = margin(t = 15, r = 10, b = 10, l = 10)
+  )
+
+ggsave(file.path(path_figures, "fig_gap_controls_dag.pdf"), fig_causal_diagram,
+       width = 8, height = 9.5)
+ggsave(file.path(path_figures, "fig_gap_controls_dag.png"), fig_causal_diagram,
+       width = 8, height = 9.5, dpi = 300)
+
+fig_causal_diagram
+
+# We now assess the "bad" controls empirically
+tab_balance <- geih |>
+  mutate(
+    bin_domestic = as.numeric(cat_relab == "Domestic worker"),
+    bin_tertiary = as.numeric(cat_educ == "Tertiary"),   # replaces bin_college
+    num_estrato  = as.numeric(as.character(cat_estrato))
+  ) |>
+  select(bin_female, num_age, num_estrato, bin_tertiary,
+         num_hours, bin_domestic, bin_formal) |>
+  pivot_longer(cols = -bin_female, names_to = "cat_variable", values_to = "num_value") |>
+  group_by(cat_variable) |>
+  mutate(num_sd_total = sd(num_value, na.rm = TRUE)) |>
+  group_by(cat_variable, bin_female, num_sd_total) |>
+  summarise(num_mean = mean(num_value, na.rm = TRUE), .groups = "drop") |>
+  pivot_wider(
+    names_from  = bin_female,
+    values_from = num_mean,
+    names_glue  = "num_mean_{ifelse(bin_female == 1, 'female', 'male')}"
+  ) |>
+  mutate(
+    num_smd = (num_mean_female - num_mean_male) / num_sd_total,
+    cat_label = case_match(cat_variable,
+                           "num_age"      ~ "Edad",
+                           "num_estrato"  ~ "Estrato",
+                           "bin_tertiary" ~ "Educación terciaria",
+                           "num_hours"    ~ "Horas trabajadas",
+                           "bin_domestic" ~ "Trabajo doméstico",
+                           "bin_formal"   ~ "Formalidad"
+    ),
+    cat_label = fct_reorder(cat_label, abs(num_smd))
+  )
+
+tab_balance
+
+fig_balance <- ggplot(tab_balance, aes(x = num_smd, y = cat_label)) +
+  geom_vline(xintercept = 0, linetype = "solid", color = "grey60") +
+  geom_segment(aes(x = 0, xend = num_smd, y = cat_label, yend = cat_label),
+               linewidth = 0.8, color = "#0072B2") +
+  geom_point(size = 4, color = "#0072B2") +
+  labs(
+    x = "Diferencia estandarizada", y = NULL, # Note: the difference is women - men
+    title = "Brecha de género en controles candidatos",
+    caption = "Fuente: GEIH 2018, Bogotá."
+  ) +
+  theme_classic() +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold", margin = margin(b = 10)),
+    plot.caption = element_text(hjust = 0.5, size = 8, color = "grey40")
+  )
+
+ggsave(file.path(path_figures, "fig_gap_balance.pdf"), fig_balance,
+       width = 7.2, height = 4.4)
+ggsave(file.path(path_figures, "fig_gap_balance.png"), fig_balance,
+       width = 7.2, height = 4.4, dpi = 300)
+
+fig_balance
+
+# With this evidence, we define the different specifications
+f_gap_m2 <- num_log_income ~ bin_female + num_age + num_age2 # Control for age
+f_gap_m3 <- num_log_income ~ bin_female + num_age + num_age2 + cat_estrato # Age + socioeconomic stratum
+f_gap_m4 <- num_log_income ~ bin_female + num_age + num_age2 + cat_estrato + cat_educ # Age + stratum + education
+f_gap_m5 <- num_log_income ~ bin_female + num_age + num_age2 + cat_estrato + cat_educ + bin_formal # Age + stratum + education + formality
+f_gap_m6 <- num_log_income ~ bin_female + num_age + num_age2 + cat_estrato + cat_educ + bin_formal + num_hours + cat_relab # Age + stratum + education + formality + weekly hours + employment type
+
+# Estimate the different models
+m_gap_m2 <- lm(f_gap_m2, data = geih)
+m_gap_m3 <- lm(f_gap_m3, data = geih)
+m_gap_m4 <- lm(f_gap_m4, data = geih)
+m_gap_m5 <- lm(f_gap_m5, data = geih)
+m_gap_m6 <- lm(f_gap_m6, data = geih)
+
+# 3) Next, we estimate the conditional gap via FWL -----------------------------
+
+# We compare FWL with the standard regression; the coefficient should match.
+# M6 is the preferred specification for the tax authority's prediction
+# problem: job attributes are useful predictors of expected income even
+# though they are flagged as potential bad controls for a *causal*
+# reading of the gender coefficient (see fig_gap_controls_dag.pdf).
+
+# Build a list containing all the models
+list_specs <- list(
+  list(name = "M1: Incondicional",                model = m_gap_uncond, controls = ~1),
+  list(name = "M2: + Edad",                       model = m_gap_m2,     controls = ~ num_age + num_age2),
+  list(name = "M3: + Estrato",                    model = m_gap_m3,     controls = ~ num_age + num_age2 + cat_estrato),
+  list(name = "M4: + Educación",                  model = m_gap_m4,     controls = ~ num_age + num_age2 + cat_estrato + cat_educ),
+  list(name = "M5: + Formalidad",                 model = m_gap_m5,     controls = ~ num_age + num_age2 + cat_estrato + cat_educ + bin_formal),
+  list(name = "M6: + Horas/Ocupación (preferida)", model = m_gap_m6,     controls = ~ num_age + num_age2 + cat_estrato + cat_educ + bin_formal + num_hours + cat_relab)
+)
+
+# Obtain FWL for the preferred specification (M6)
+m_gap_fwl <- fwl_gender(geih, list_specs[[6]]$controls)
+
+# Verify that FWL matches the long regression
+all.equal(
+  unname(coef(m_gap_m6)["bin_female"]),
+  unname(coef(m_gap_fwl)["x_tilde"])
+)
+
+# 4) Next, we report the analytical and bootstrap standard errors --------------
+
+tab_gap_final <- map_dfr(list_specs, function(spec) {
+  message("  -> ", spec$name) # Print the model name
+  se_boot <- bootstrap_fwl_se(geih, spec$controls) # Extract the bootstrap SE
+  coef_f  <- coef(spec$model)["bin_female"] # Extract the bin_female coefficient
+  tibble(
+    cat_specification  = spec$name,
+    num_coef_female    = coef_f,
+    num_se_analytical  = summary(spec$model)$coefficients["bin_female", "Std. Error"],
+    num_se_bootstrap   = se_boot,
+    num_pct_gap        = 100 * (exp(coef_f) - 1),
+    num_r2             = summary(spec$model)$r.squared,
+    num_n              = nobs(spec$model)
+  )
+})
+
+tab_gap_final
+
+# 5) Next, we build the comparison table with all components -------------------
+
+tab_gap_tex <- tab_gap_final |>
+  mutate(
+    Specification   = cat_specification,
+    `Female coef.`   = fmt_num(num_coef_female, 3),
+    `Analytical SE`  = fmt_num(num_se_analytical, 3),
+    `Bootstrap SE`   = fmt_num(num_se_bootstrap, 3),
+    `Gap (\\%)`      = fmt_num(num_pct_gap, 1),
+    `R$^2$`          = fmt_num(num_r2, 3),
+    N                = fmt_num(num_n, 0)
+  ) |>
+  select(Specification, `Female coef.`, `Analytical SE`, `Bootstrap SE`,
+         `Gap (\\%)`, `R$^2$`, N)
+
+write_booktabs(tab_gap_tex, file.path(path_tables, "tab_gender_gap.tex"), align = "lcccccc")
+
+# 6) Now, the age-income profiles ----------------------------------------------
+
+# Define the model with a gender-by-age interaction, built on the
+# preferred (M6) control set: age, stratum, education, formality,
+# hours, and employment type.
+f_gap_profile <- num_log_income ~ bin_female * num_age + bin_female * num_age2 +
+  cat_estrato + cat_educ + bin_formal + num_hours + cat_relab
+
+# Estimate the model
+m_gap_profile <- lm(f_gap_profile, data = geih)
+
+# Extract the peak ages
+peaks_gender <- peaks_by_gender(m_gap_profile) # Returns the pair of peak ages for men and women
+peaks_gender$peak_men
+peaks_gender$peak_women
+
+# Plot the predicted profiles
+modal_estrato <- names(sort(table(geih$cat_estrato), decreasing = TRUE))[1]
+modal_educ    <- names(sort(table(geih$cat_educ), decreasing = TRUE))[1]
+modal_formal  <- as.integer(names(sort(table(geih$bin_formal), decreasing = TRUE))[1])
+modal_relab   <- names(sort(table(geih$cat_relab), decreasing = TRUE))[1]
+median_hours  <- median(geih$num_hours)
+
+grid_profile <- expand.grid(
+  num_age    = seq(18, 80, by = 1),
   bin_female = c(0, 1),
   KEEP.OUT.ATTRS = FALSE
 ) |>
   as_tibble() |>
   mutate(
-    num_age2 = num_age^2,
-    num_hours = median_hours,
-    cat_relab = factor(modal_relab, levels = levels(geih$cat_relab)),
-    cat_educ = factor(modal_educ, levels = levels(geih$cat_educ)),
-    sex = if_else(bin_female == 1, "Women", "Men")
+    num_age2    = num_age^2,
+    cat_estrato = factor(modal_estrato, levels = levels(geih$cat_estrato)),
+    cat_educ    = factor(modal_educ, levels = levels(geih$cat_educ)),
+    bin_formal  = modal_formal,
+    num_hours   = median_hours,
+    cat_relab   = factor(modal_relab, levels = levels(geih$cat_relab)),
+    cat_gender  = if_else(bin_female == 1, "Mujer", "Hombre")
   )
 
-grid_g$pred <- predict(m_gap_profile, newdata = grid_g)
+grid_profile$num_pred <- predict(m_gap_profile, newdata = grid_profile)
 
-fig_gap_profiles <- ggplot(grid_g, aes(x = num_age, y = pred, colour = sex)) +
-  geom_line(linewidth = 1) +
-  geom_vline(xintercept = peaks_g$peak_men, colour = col_navy,
-             linetype = "dotted", linewidth = 0.4) +
-  geom_vline(xintercept = peaks_g$peak_women, colour = col_terra,
-             linetype = "dotted", linewidth = 0.4) +
-  scale_colour_manual(values = c("Men" = col_navy, "Women" = col_terra)) +
+fig_gap_profiles <- ggplot(grid_profile, aes(x = num_age, y = num_pred, color = cat_gender)) +
+  geom_line(linewidth = 1.1) +
+  geom_vline(xintercept = peaks_gender$peak_men, color = cat_gender_colors["Hombre"],
+             linetype = "dotted", linewidth = 0.6) +
+  geom_vline(xintercept = peaks_gender$peak_women, color = cat_gender_colors["Mujer"],
+             linetype = "dotted", linewidth = 0.6) +
+  scale_color_manual(values = cat_gender_colors) +
   labs(
-    title = "Predicted age--income profiles by gender",
-    subtitle = paste0("Preferred controls. Hours at the median; education = ",
-                      modal_educ, "; employment type = ", modal_relab, "."),
-    x = "Age",
-    y = "Predicted log monthly labour income",
-    caption = "Source: Own calculations, GEIH 2018 (Bogotá sample). Dotted lines mark implied peaks."
+    x = "Edad", y = "Log(ingreso laboral mensual) predicho",
+    color = "Género",
+    title = "Perfiles edad-ingreso predichos por género",
+    subtitle = paste0("Estrato = ", modal_estrato, "; educación = ", modal_educ,
+                      "; formalidad = ", modal_formal, "; horas = ", median_hours,
+                      "; ocupación = ", modal_relab, ". Líneas punteadas: edad pico."),
+    caption = "Fuente: GEIH 2018, Bogotá."
+  ) +
+  theme_classic() +
+  theme(
+    plot.title    = element_text(hjust = 0.5, face = "bold", margin = margin(b = 5)),
+    plot.subtitle = element_text(hjust = 0.5, size = 8, color = "grey30"),
+    plot.caption  = element_text(hjust = 0.5, size = 8, color = "grey40")
   )
+
+fig_gap_profiles
 
 ggsave(file.path(path_figures, "fig_gap_profiles.pdf"), fig_gap_profiles,
        width = 7.2, height = 4.4)
 ggsave(file.path(path_figures, "fig_gap_profiles.png"), fig_gap_profiles,
        width = 7.2, height = 4.4, dpi = 300)
 
-fig_gap_profiles_cop <- grid_g |>
-  ggplot(aes(x = num_age, y = exp(pred) / 1e6, colour = sex)) +
-  geom_line(linewidth = 1) +
-  scale_colour_manual(values = c("Men" = col_navy, "Women" = col_terra)) +
-  labs(
-    title = "Predicted monthly labour income by age and gender",
-    subtitle = "Exponentiated fitted values from the preferred conditional specification.",
-    x = "Age",
-    y = "Predicted monthly labour income (million COP)",
-    caption = "Source: Own calculations, GEIH 2018 (Bogotá sample)."
-  )
+# Build the confidence intervals
+ci_gender <- bootstrap_peaks_by_gender(geih, f_gap_profile)
+ci_gender$men
+ci_gender$women
 
-ggsave(file.path(path_figures, "fig_gap_profiles_cop.pdf"), fig_gap_profiles_cop,
-       width = 7.2, height = 4.4)
-ggsave(file.path(path_figures, "fig_gap_profiles_cop.png"), fig_gap_profiles_cop,
-       width = 7.2, height = 4.4, dpi = 300)
+# Build the final table
+tab_peaks_gender <- tibble(
+  Group = c("Men", "Women"),
+  `Peak age` = c(fmt_num(peaks_gender$peak_men, 1), fmt_num(peaks_gender$peak_women, 1)),
+  `95\\% bootstrap CI` = c(
+    paste0("[", fmt_num(ci_gender$men[1], 1), ", ", fmt_num(ci_gender$men[2], 1), "]"),
+    paste0("[", fmt_num(ci_gender$women[1], 1), ", ", fmt_num(ci_gender$women[2], 1), "]")
+  )
+)
+
+write_booktabs(tab_peaks_gender, file.path(path_tables, "tab_gender_peaks.tex"), align = "lcc")
+
+# 7) Save the models ------------------------------------------------------------
+
+saveRDS(list(
+  uncond    = m_gap_uncond,
+  m2        = m_gap_m2,
+  m3        = m_gap_m3,
+  m4        = m_gap_m4,
+  m5        = m_gap_m5,
+  m6        = m_gap_m6,
+  fwl       = m_gap_fwl,
+  profile   = m_gap_profile,
+  gap_table = tab_gap_final,
+  peaks     = peaks_gender,
+  ci_peaks  = ci_gender
+), file.path(path_temp, "section2_models.rds"))
