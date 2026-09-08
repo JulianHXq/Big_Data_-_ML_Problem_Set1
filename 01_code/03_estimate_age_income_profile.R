@@ -20,12 +20,12 @@ m_age_cond   <- lm(f_age_cond, data = geih)
 peak_uncond <- extract_peak_age(m_age_uncond)
 peak_cond   <- extract_peak_age(m_age_cond)
 
-message("Bootstrapping peak-age intervals (Section 1)...")
-ci_uncond <- bootstrap_peak_age(geih, f_age_uncond)
-ci_cond   <- bootstrap_peak_age(geih, f_age_cond)
+message("Bootstrapping peak-age intervals (Section 1, R = 5000)...")
+ci_uncond <- bootstrap_peak_age(geih, f_age_uncond, n_boot = 5000)
+ci_cond   <- bootstrap_peak_age(geih, f_age_cond, n_boot = 5000)
 
 age_gof <- tibble(
-  specification = c("Unconditional", "Conditional"),
+  specification = c("Incondicional", "Condicional"),
   peak_age = c(peak_uncond, peak_cond),
   ci_low = c(ci_uncond[1], ci_cond[1]),
   ci_high = c(ci_uncond[2], ci_cond[2]),
@@ -35,31 +35,38 @@ age_gof <- tibble(
 )
 
 modelsummary(
-  list("Unconditional" = m_age_uncond, "Conditional" = m_age_cond),
+  list("Incondicional" = m_age_uncond, "Condicional" = m_age_cond),
   output = file.path(path_tables, "tab_age_income_coefs.tex"),
   stars = c("*" = 0.1, "**" = 0.05, "***" = 0.01),
   gof_map = c("nobs", "r.squared", "adj.r.squared"),
   coef_rename = c(
-    "(Intercept)" = "Intercept",
-    num_age = "Age",
-    num_age2 = "Age squared",
-    num_hours = "Weekly hours"
+    "(Intercept)" = "Intercepto",
+    num_age = "Edad",
+    num_age2 = "Edad al cuadrado",
+    num_hours = "Horas semanales"
   ),
   fmt = 4,
   escape = FALSE,
-  title = "Age--labour income profiles, employed adults in Bogot\\'a."
+  title = "Perfiles edad--ingreso laboral, ocupados adultos en Bogotá."
 )
 
 age_gof_tex <- age_gof |>
-  mutate(
-    `Peak age` = fmt_num(peak_age, 1),
-    `95\\% bootstrap CI` = paste0("[", fmt_num(ci_low, 1), ", ", fmt_num(ci_high, 1), "]"),
-    `R$^2$` = fmt_num(r2, 3),
-    `Adj. R$^2$` = fmt_num(adj_r2, 3),
-    N = fmt_num(n, 0),
-    Specification = specification
-  ) |>
-  select(Specification, `Peak age`, `95\\% bootstrap CI`, `R$^2$`, `Adj. R$^2$`, N)
+  transmute(
+    spec = specification,
+    pico = fmt_num(peak_age, 1),
+    ic = paste0("[", fmt_num(ci_low, 1), ", ", fmt_num(ci_high, 1), "]"),
+    r2 = fmt_num(r2, 3),
+    adj = fmt_num(adj_r2, 3),
+    n = fmt_num(n, 0)
+  )
+names(age_gof_tex) <- c(
+  "Especificaci\\'on",
+  "Edad de pico",
+  "IC bootstrap 95\\%",
+  "R$^2$",
+  "R$^2$ ajustado",
+  "N"
+)
 
 write_booktabs(age_gof_tex, file.path(path_tables, "tab_age_income_peaks.tex"), align = "lccccc")
 
@@ -85,11 +92,11 @@ fig_age_bins <- ggplot(age_bins, aes(x = age_int, y = mean_log_w)) +
   geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = TRUE,
               colour = col_terra, fill = col_terra, alpha = 0.15, linewidth = 0.8) +
   labs(
-    title = "Mean log labour income by age",
-    subtitle = "Employed adults, Bogotá 2018. Bins with fewer than 20 observations omitted.",
-    x = "Age",
-    y = "Mean log monthly labour income",
-    caption = "Source: Own calculations, GEIH 2018 (Bogotá sample)."
+    title = "Media del logaritmo del ingreso laboral, por edad",
+    subtitle = "Ocupados adultos, Bogotá 2018. Se omiten edades con menos de 20 observaciones.",
+    x = "Edad",
+    y = "Media del logaritmo del ingreso laboral mensual",
+    caption = "Fuente: elaboración propia con la GEIH 2018 (muestra de Bogotá)."
   )
 
 ggsave(file.path(path_figures, "fig_age_binned_means.pdf"), fig_age_bins,
@@ -117,21 +124,21 @@ age_grid$pred_cond   <- predict(m_age_cond, newdata = age_grid)
 fig_age_profiles <- age_grid |>
   pivot_longer(c(pred_uncond, pred_cond), names_to = "spec", values_to = "pred") |>
   mutate(spec = recode(spec,
-                       pred_uncond = "Unconditional",
-                       pred_cond = "Conditional (hours and employment type)")) |>
+                       pred_uncond = "Incondicional",
+                       pred_cond = "Condicional (horas y tipo de ocupación)")) |>
   ggplot(aes(x = num_age, y = pred, colour = spec, linetype = spec)) +
   geom_line(linewidth = 1) +
   geom_vline(xintercept = peak_uncond, colour = col_navy, linetype = "dotted", linewidth = 0.4) +
   geom_vline(xintercept = peak_cond, colour = col_terra, linetype = "dotted", linewidth = 0.4) +
-  scale_colour_manual(values = c("Unconditional" = col_navy,
-                                 "Conditional (hours and employment type)" = col_terra)) +
+  scale_colour_manual(values = c("Incondicional" = col_navy,
+                                 "Condicional (horas y tipo de ocupación)" = col_terra)) +
   labs(
-    title = "Predicted log labour income over the life cycle",
-    subtitle = paste0("Conditional profile at median hours (", round(median_hours),
-                      " per week) and modal employment type (", modal_relab, ")."),
-    x = "Age",
-    y = "Predicted log monthly labour income",
-    caption = "Source: Own calculations, GEIH 2018 (Bogotá sample). Dotted lines mark implied peaks."
+    title = "Logaritmo del ingreso laboral predicho a lo largo del ciclo de vida",
+    subtitle = paste0("Perfil condicional en la mediana de horas (", round(median_hours),
+                      " por semana) y en el tipo de ocupación más frecuente."),
+    x = "Edad",
+    y = "Logaritmo predicho del ingreso laboral mensual",
+    caption = "Fuente: elaboración propia con la GEIH 2018 (muestra de Bogotá). Las líneas punteadas marcan los picos implícitos."
   )
 
 ggsave(file.path(path_figures, "fig_age_profiles.pdf"), fig_age_profiles,
@@ -142,19 +149,19 @@ ggsave(file.path(path_figures, "fig_age_profiles.png"), fig_age_profiles,
 # Levels (COP), more interpretable for a tax-authority audience.
 fig_age_profiles_cop <- age_grid |>
   mutate(
-    Unconditional = exp(pred_uncond),
-    Conditional = exp(pred_cond)
+    Incondicional = exp(pred_uncond),
+    Condicional = exp(pred_cond)
   ) |>
-  pivot_longer(c(Unconditional, Conditional), names_to = "spec", values_to = "pred_cop") |>
+  pivot_longer(c(Incondicional, Condicional), names_to = "spec", values_to = "pred_cop") |>
   ggplot(aes(x = num_age, y = pred_cop / 1e6, colour = spec)) +
   geom_line(linewidth = 1) +
-  scale_colour_manual(values = c("Unconditional" = col_navy, "Conditional" = col_terra)) +
+  scale_colour_manual(values = c("Incondicional" = col_navy, "Condicional" = col_terra)) +
   labs(
-    title = "Predicted monthly labour income over the life cycle",
-    subtitle = "Exponentiated fitted values. Conditional profile at median hours and modal employment type.",
-    x = "Age",
-    y = "Predicted monthly labour income (million COP)",
-    caption = "Source: Own calculations, GEIH 2018 (Bogotá sample)."
+    title = "Ingreso laboral mensual predicho a lo largo del ciclo de vida",
+    subtitle = "Valores ajustados en pesos. Perfil condicional en la mediana de horas y el tipo de ocupación más frecuente.",
+    x = "Edad",
+    y = "Ingreso laboral mensual predicho (millones de COP)",
+    caption = "Fuente: elaboración propia con la GEIH 2018 (muestra de Bogotá)."
   )
 
 ggsave(file.path(path_figures, "fig_age_profiles_cop.pdf"), fig_age_profiles_cop,

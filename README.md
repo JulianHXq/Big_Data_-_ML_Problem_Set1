@@ -79,7 +79,7 @@ Todo se genera en `02_outputs/`. No se edita a mano.
 
 ## Decisiones de muestra (las mismas en las tres secciones)
 
-- Unidad: ocupado (`ocu == 1`) de 18 años o más, como pide el enunciado.
+- Unidad: ocupado (`ocu == 1`) de 18 años o más.
 - Ingreso: `y_total_m > 0`. El outcome es $\log(w)$; ceros y missing no son imputables sin una historia de selección, y no son la población con ingreso reportable.
 - Horas: `totalHoursWorked > 0` y no mayores a 126 por semana (18 horas × 7 días). Lo segundo es error de reporte, no un recorte por residuales.
 - Variables de hogar (número de menores) se construyen **antes** de restringir a ocupados.
