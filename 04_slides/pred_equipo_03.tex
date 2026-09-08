@@ -4,7 +4,7 @@
 \title{Predicci\'on de ingreso laboral}
 \subtitle{Problem Set 1 $\cdot$ Secci\'on 3}
 \author{Juli\'an Herrera \and Andr\'es Silva \and Valentina Vera}
-\institute{Ms Economía PEG $\cdot$ Big Data and Machine Learning para Econom\'ia Aplicada\\ Universidad de los Andes}
+\institute{Ms Econom\'ia PEG $\cdot$ Big Data and Machine Learning para Econom\'ia Aplicada\\ Universidad de los Andes}
 \date{2026-20 $\cdot$ Grupo 3}
 
 \begin{document}
@@ -14,34 +14,89 @@
 \end{frame}
 
 \begin{frame}{Result overview}
-  \vspace{0.3em}
-  \begin{columns}[T]
-    \column{0.5\textwidth}
-      \statblock{\bestvalid}{RMSE de validaci\'on}{\bestshort}
-    \column{0.5\textwidth}
-      \statblock{\topvar}{predictor m\'as importante}{sube el RMSE en \topdelta\ al permutar}
-  \end{columns}
-  \vspace{0.9em}
-  Entrenamiento: chunks 1--7 ($N=\ntrain$). Validaci\'on: chunks 8--10 ($N=\nvalid$).
-  LOOCV en entrenamiento $=\bestloocv$, cercano al RMSE de validaci\'on: el ranking no es un artefacto del corte.
-  \source{P\'erdida: RMSE en $\log$ ingreso laboral mensual. LOOCV v\'ia f\'ormula de leverage, no $n$ refittings.}
-\end{frame}
 
-\begin{frame}{De interpretar a predecir}
-  \begin{itemize}
-    \item Las Secciones 1 y 2 eligen modelos por teor\'ia. Esta secci\'on los juzga por \textbf{error fuera de muestra}.
-    \item Un modelo interpretable que predice mal no sirve para detectar subdeclaraci\'on: genera demasiados falsos positivos o se pierde a los altos ingresos.
-    \item Dise\~no impuesto por el enunciado: chunks 1--7 entrenan; 8--10 validan. No es un split aleatorio. Si los chunks difieren por mes o por muestreo, el RMSE de validaci\'on es una prueba m\'as dura.
-  \end{itemize}
-  \vspace{0.6em}
-  \begin{block}{Cinco modelos adicionales, todos motivados}
-    Un sexto modelo, m\'as flexible (polinomio de edad, interacciones con g\'enero y educaci\'on), sirve de chequeo: si sobreajusta, el RMSE de validaci\'on deber\'ia subir.
-  \end{block}
+\vspace{0.5em}
+
+\begin{center}
+\begin{tabular}{@{}c@{\hspace{1.2cm}}c@{}}
+
+% -------- CARD 1 --------
+\fcolorbox{black!12}{black!3}{
+  \begin{minipage}[c][3.15cm][c]{0.38\textwidth}
+    \centering
+
+    {\usebeamercolor[fg]{structure}
+    \fontsize{27}{30}\selectfont
+    \bestvalid\par}
+
+    \vspace{0.35em}
+
+    {\large RMSE de validaci\'on\par}
+
+    \vspace{0.45em}
+
+    {\small
+    \textbf{S2: Preferred gender gap}
+    \par}
+  \end{minipage}
+}
+
+&
+
+% -------- CARD 2 --------
+\fcolorbox{black!12}{black!3}{
+  \begin{minipage}[c][3.15cm][c]{0.38\textwidth}
+    \centering
+
+    {\usebeamercolor[fg]{structure}
+    \Large\textbf{Stratum}\par}
+
+    \vspace{0.35em}
+
+    {\large predictor m\'as importante\par}
+
+    \vspace{0.45em}
+
+    {\small
+    $\Delta$RMSE = \textbf{\topdelta}
+    al permutar
+    \par}
+  \end{minipage}
+}
+
+\end{tabular}
+\end{center}
+
+\vspace{1.0em}
+
+\begin{center}
+\begin{minipage}{0.88\textwidth}
+
+\textbf{Muestra de entrenamiento:}
+chunks 1--7 ($N=\ntrain$)
+
+\vspace{0.25em}
+
+\textbf{Muestra de validaci\'on:}
+chunks 8--10 ($N=\nvalid$)
+
+\vspace{0.25em}
+
+\textbf{LOOCV del modelo seleccionado:}
+\bestloocv
+
+\end{minipage}
+\end{center}
+
+\vfill
+
+\source{P\'erdida: RMSE en $\log$ ingreso laboral mensual. LOOCV v\'ia f\'ormula de leverage.}
+
 \end{frame}
 
 \begin{frame}{RMSE de validaci\'on}
   \begin{center}
-    \includegraphics[width=0.95\textwidth]{fig_validation_rmse.pdf}
+    \includegraphics[width=0.82\textwidth]{fig_validation_rmse.pdf}
   \end{center}
 \end{frame}
 
@@ -50,7 +105,8 @@
     \scriptsize
     \resizebox{0.98\textwidth}{!}{\input{../02_outputs/tables/tab_prediction_rmse.tex}}
   \end{center}
-  \source{El $R^2$ de entrenamiento no elige el modelo. El RMSE de validaci\'on s\'i.}
+
+  \source{El $R^2$ de entrenamiento no elige el modelo. El criterio de selecci\'on es RMSE de validaci\'on.}
 \end{frame}
 
 \begin{frame}{LOOCV contra validaci\'on}
@@ -58,11 +114,12 @@
     \footnotesize
     \input{../02_outputs/tables/tab_loocv_vs_validation.tex}
   \end{center}
+
   \vspace{0.6em}
   \begin{itemize}
-    \item LOOCV usa $\tilde{\varepsilon}_i=\hat{\varepsilon}_i/(1-h_{ii})$. Un OLS, una correcci\'on de leverage: el mismo estimador que un loop de $n$ regresiones, sin el costo.
-    \item Si LOOCV y validaci\'on discreparan mucho, el corte por chunks estar\'ia haciendo el trabajo. Aqu\'i se mueven juntos.
-    \item El RMSE de entrenamiento es optimista, como debe serlo.
+    \item LOOCV calcula el error dejando una observaci\'on fuera cada vez.
+    \item Para OLS usamos $\tilde{\varepsilon}_i=\hat{\varepsilon}_i/(1-h_{ii})$, equivalente a reestimar $n$ veces.
+    \item LOOCV y validaci\'on son relativamente cercanos, lo que sugiere estabilidad razonable del desempe\~no predictivo.
   \end{itemize}
 \end{frame}
 
@@ -70,12 +127,16 @@
   \begin{center}
     \includegraphics[width=0.92\textwidth]{fig_variable_importance.pdf}
   \end{center}
+
+  \source{La importancia se mide como el aumento en RMSE al permutar cada covariable, manteniendo fijo el modelo.}
 \end{frame}
 
 \begin{frame}{C\'omo predice el modelo en funci\'on de \topvar}
   \begin{center}
     \includegraphics[width=0.92\textwidth]{fig_prediction_partial_dependence.pdf}
   \end{center}
+
+  \source{Las dem\'as covariables se mantienen en valores t\'ipicos de entrenamiento. No es una interpretaci\'on causal.}
 \end{frame}
 
 \begin{frame}{D\'onde se rompe la predicci\'on}
@@ -86,13 +147,14 @@
 
 \begin{frame}{Lectura para la autoridad tributaria}
   \begin{itemize}
-    \item El mejor modelo gana por validaci\'on, no por relato. El polinomio flexible que incluimos como chequeo de sobreajuste \textbf{gana}: el LOOCV no se dispara. Aqu\'i la flexibilidad todav\'ia compra predicci\'on.
-    \item \topvar\ es el insumo que m\'as duele perder. En Bogot\'a el estrato es un proxy de barrio y de red. Para fiscalizaci\'on es observable; no es un salario. Usarlo como filtro mezcla ubicaci\'on con ingreso.
-    \item Los residuales en la cola alta son el l\'imite operativo: el modelo no distingue bien entre un alto ingreso verdadero y un alto ingreso no observado. Ah\'i la auditor\'ia no puede ser autom\'atica.
+    \item El mejor modelo es \textbf{\bestshort}. Ninguna especificaci\'on se escoge por relato: gana la que minimiza el RMSE de validaci\'on.
+    \item \topvar\ es la variable cuya permutaci\'on deteriora m\'as la predicci\'on. Esto indica importancia predictiva, no causalidad.
+    \item Los residuales muestran d\'onde el modelo falla. Para una autoridad tributaria, el modelo puede ayudar a priorizar casos, pero no debe automatizar auditor\'ias.
   \end{itemize}
+
   \vspace{0.4em}
   \begin{block}{Takeaway}
-    \bestshort\ minimiza el RMSE de validaci\'on (\bestvalid). LOOCV lo confirma (\bestloocv). El predictor que m\'as importa es \topvar. El modelo ordena la masa de la distribuci\'on; no resuelve la cola.
+    \bestshort\ minimiza el RMSE de validaci\'on (\bestvalid). LOOCV es consistente con este resultado (\bestloocv). El predictor m\'as importante es \topvar.
   \end{block}
 \end{frame}
 
