@@ -64,8 +64,6 @@ ggsave(file.path(path_figures, "fig_gap_income_density.pdf"), fig_income_density
 ggsave(file.path(path_figures, "fig_gap_income_density.png"), fig_income_density,
        width = 7.2, height = 4.4, dpi = 300)
 
-fig_income_density
-
 # 1) First, we estimate the unconditional gap ----------------------------------
 
 # Define the formula
@@ -73,9 +71,6 @@ f_gap_uncond <- num_log_income ~ bin_female
 
 # Estimate the model
 m_gap_uncond <- lm(f_gap_uncond, data = geih)
-
-# Check the result - can be removed later
-summary(m_gap_uncond)
 
 # 2) Next, we estimate the conditional gap -------------------------------------
 
@@ -85,17 +80,17 @@ summary(m_gap_uncond)
 
 # Nodes: position and role (X, Z, or Y) within each pattern
 nodes <- tribble(
-  ~cat_pattern,                ~cat_role, ~num_x, ~num_y,
-  "1. Neutral",        "X",       1,      0.0,
-  "1. Neutral",        "Y",       3,      0.0,
-  "1. Neutral",        "Z",       2,      1.3,
-  "2. Mediador",        "X",       1,      0.0,
-  "2. Mediador",        "Z",       2,      0.0,
-  "2. Mediador",        "Y",       3,      0.0,
-  "3. Colisionador",    "X",       1,      1.0,
-  "3. Colisionador",    "Y",       3,      1.0,
-  "3. Colisionador",    "Z",       2,      0.0,
-  "4. Modificador", "Z",       2,      1.3,
+  ~cat_pattern,     ~cat_role, ~num_x, ~num_y,
+  "1. Neutral",     "X",       1,      0.0,
+  "1. Neutral",     "Y",       3,      0.0,
+  "1. Neutral",     "Z",       2,      0.65,
+  "2. Mediador",    "X",       1,      0.0,
+  "2. Mediador",    "Z",       2,      0.0,
+  "2. Mediador",    "Y",       3,      0.0,
+  "3. Colisionador","X",       1,      0.5,
+  "3. Colisionador","Y",       3,      0.5,
+  "3. Colisionador","Z",       2,      0.0,
+  "4. Modificador", "Z",       2,      0.65,
   "4. Modificador", "X",       1,      0.0,
   "4. Modificador", "Y",       3,      0.0
 ) |>
@@ -103,33 +98,33 @@ nodes <- tribble(
 
 # Arrows between nodes
 edges <- tribble(
-  ~cat_pattern,                ~num_x, ~num_y, ~num_xend, ~num_yend, ~cat_line,
-  "1. Neutral",         1,     0.0,    3,         0.0,       "solid",
-  "1. Neutral",         2,     1.15,   2.85,      0.12,      "solid",
-  "2. Mediador",         1,     0.0,    1.85,      0.0,       "solid",
-  "2. Mediador",         2.15,  0.0,    3,         0.0,       "solid",
-  "3. Colisionador",     1.15,  0.9,    1.85,      0.12,      "solid",
-  "3. Colisionador",     2.85,  0.9,    2.15,      0.12,      "solid",
-  "4. Modificador",  1,     0.0,    3,         0.0,       "solid",
-  "4. Modificador",  2,     1.15,   2,         0.15,      "dashed"
+  ~cat_pattern,      ~num_x, ~num_y, ~num_xend, ~num_yend, ~cat_line,
+  "1. Neutral",        1,     0.0,    3,         0.0,       "solid",
+  "1. Neutral",        2,     0.5,    2.85,      0.06,      "solid",
+  "2. Mediador",       1,     0.0,    1.85,      0.0,       "solid",
+  "2. Mediador",       2.15,  0.0,    3,         0.0,       "solid",
+  "3. Colisionador",   1.15,  0.35,   1.85,      0.06,      "solid",
+  "3. Colisionador",   2.85,  0.35,   2.15,      0.06,      "solid",
+  "4. Modificador",    1,     0.0,    3,         0.0,       "solid",
+  "4. Modificador",    2,     0.5,    2,         0.03,      "dashed"
 ) |>
   mutate(cat_pattern = fct_inorder(cat_pattern))
 
 # Which real variables fall into each pattern
 captions <- tribble(
-  ~cat_pattern,                ~str_caption,                          ~str_verdict,
-  "1. Neutral",        "edad, estrato",                       "Bueno para causalidad y predicción",
-  "2. Mediador",        "educ., horas, ocupación, formalidad", "Malo para causalidad, bueno para predicción",
-  "3. Colisionador",    "jefe de hogar",                       "Malo para causalidad y predicción",
-  "4. Modificador", "menores en el hogar",                 "Requiere modelar la interacción"
+  ~cat_pattern,      ~str_caption,                          ~str_verdict,
+  "1. Neutral",      "edad, estrato",                       "Bueno para causalidad y predicción",
+  "2. Mediador",      "educ., horas, ocupaci\u00f3n, formalidad", "Malo para causalidad, bueno para predicción",
+  "3. Colisionador",  "jefe de hogar",                       "Malo para causalidad y predicción",
+  "4. Modificador",   "menores en el hogar",                 "Requiere modelar la interacción"
 ) |>
   mutate(cat_pattern = fct_inorder(cat_pattern))
 
 # Only the Z node is coloured by verdict; X and Y stay neutral
 cat_pattern_colors <- c(
-  "1. Neutral"         = "#3B8BD4",
-  "2. Mediador"         = "#D85A30",
-  "3. Colisionador"     = "#E24B4A",
+  "1. Neutral"      = "#3B8BD4",
+  "2. Mediador"     = "#D85A30",
+  "3. Colisionador" = "#E24B4A",
   "4. Modificador"  = "#D4537E"
 )
 
@@ -140,28 +135,28 @@ fig_causal_diagram <- ggplot() +
   geom_segment(
     data = edges,
     aes(x = num_x, y = num_y, xend = num_xend, yend = num_yend, linetype = cat_line),
-    arrow = arrow(length = unit(0.22, "cm"), type = "closed"),
+    arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
     linewidth = 0.6, color = "grey30"
   ) +
   geom_label(
     data = nodes,
     aes(x = num_x, y = num_y, label = cat_role, fill = cat_fill),
-    color = "white", fontface = "bold", size = 5,
+    color = "white", fontface = "bold", size = 5.5,
     label.size = 0, label.padding = unit(0.3, "lines")
   ) +
   geom_text(
     data = captions,
-    aes(x = 2, y = -0.4, label = str_caption),
-    size = 3.2, color = "grey30"
+    aes(x = 2, y = -0.35, label = str_caption),
+    size = 3.8, color = "grey30"
   ) +
   geom_text(
     data = captions,
-    aes(x = 2, y = -0.68, label = str_verdict),
-    size = 3, color = "grey15", fontface = "italic"
+    aes(x = 2, y = -0.56, label = str_verdict),
+    size = 3.4, color = "grey15", fontface = "italic"
   ) +
   scale_fill_manual(values = c(cat_pattern_colors, generic = "grey70"), guide = "none") +
   scale_linetype_manual(values = c(solid = "solid", dashed = "dashed"), guide = "none") +
-  coord_cartesian(xlim = c(0.5, 3.5), ylim = c(-1.0, 1.6)) +
+  coord_cartesian(xlim = c(0.5, 3.5), ylim = c(-0.72, 1.0)) +
   facet_wrap(~ cat_pattern, ncol = 2) +
   labs(
     title = "Clasificación de controles candidatos para la brecha de género",
@@ -169,16 +164,16 @@ fig_causal_diagram <- ggplot() +
   ) +
   theme_void() +
   theme(
-    strip.text   = element_text(face = "bold", size = 11),
-    plot.title   = element_text(hjust = 0.5, face = "bold", margin = margin(b = 10)),
-    plot.caption = element_text(hjust = 0.5, size = 8, color = "grey40", margin = margin(t = 12)),
-    plot.margin  = margin(t = 15, r = 10, b = 10, l = 10)
+    strip.text   = element_text(face = "bold", size = 13),
+    plot.title   = element_text(hjust = 0.5, face = "bold", size = 16, margin = margin(b = 8)),
+    plot.caption = element_text(hjust = 0.5, size = 8, color = "grey40", margin = margin(t = 8)),
+    plot.margin  = margin(t = 12, r = 10, b = 8, l = 10)
   )
 
 ggsave(file.path(path_figures, "fig_gap_controls_dag.pdf"), fig_causal_diagram,
-       width = 8, height = 9.5)
+       width = 10, height = 5.62)
 ggsave(file.path(path_figures, "fig_gap_controls_dag.png"), fig_causal_diagram,
-       width = 8, height = 9.5, dpi = 300)
+       width = 10, height = 5.62, dpi = 300)
 
 fig_causal_diagram
 
@@ -186,7 +181,7 @@ fig_causal_diagram
 tab_balance <- geih |>
   mutate(
     bin_domestic = as.numeric(cat_relab == "Domestic worker"),
-    bin_tertiary = as.numeric(cat_educ == "Tertiary"),   # replaces bin_college
+    bin_tertiary = as.numeric(cat_educ == "Tertiary"),  
     num_estrato  = as.numeric(as.character(cat_estrato))
   ) |>
   select(bin_female, num_age, num_estrato, bin_tertiary,
@@ -203,6 +198,10 @@ tab_balance <- geih |>
   ) |>
   mutate(
     num_smd = (num_mean_female - num_mean_male) / num_sd_total,
+    # Each variable is on a different scale (years, hours, 0/1 proportions), 
+    # so raw differences between women and men can't be compared side by
+    # side. Dividing by each variable's own standard deviation puts
+    # every difference in the same unit.
     cat_label = case_match(cat_variable,
                            "num_age"      ~ "Edad",
                            "num_estrato"  ~ "Estrato",
@@ -236,8 +235,6 @@ ggsave(file.path(path_figures, "fig_gap_balance.pdf"), fig_balance,
        width = 7.2, height = 4.4)
 ggsave(file.path(path_figures, "fig_gap_balance.png"), fig_balance,
        width = 7.2, height = 4.4, dpi = 300)
-
-fig_balance
 
 # With this evidence, we define the different specifications
 f_gap_m2 <- num_log_income ~ bin_female + num_age + num_age2 # Control for age
@@ -274,12 +271,6 @@ list_specs <- list(
 # Obtain FWL for the preferred specification (M6)
 m_gap_fwl <- fwl_gender(geih, list_specs[[6]]$controls)
 
-# Verify that FWL matches the long regression
-all.equal(
-  unname(coef(m_gap_m6)["bin_female"]),
-  unname(coef(m_gap_fwl)["x_tilde"])
-)
-
 # 4) Next, we report the analytical and bootstrap standard errors --------------
 
 tab_gap_final <- map_dfr(list_specs, function(spec) {
@@ -298,6 +289,24 @@ tab_gap_final <- map_dfr(list_specs, function(spec) {
 })
 
 tab_gap_final
+
+# Verify that FWL matches the ols regression
+ols_coef    <- unname(coef(m_gap_m6)["bin_female"])
+fwl_coef    <- unname(coef(m_gap_fwl)["x_tilde"])
+ols_se      <- unname(summary(m_gap_m6)$coefficients["bin_female", "Std. Error"])
+fwl_se_boot <- tab_gap_final$num_se_bootstrap[
+  tab_gap_final$cat_specification == "M6: + Horas/Ocupación (preferida)"
+]
+
+tab_fwl_check <- tibble(
+  `OLS female coefficient` = fmt_num(ols_coef, 6),
+  `FWL coefficient`        = fmt_num(fwl_coef, 6),
+  `Analytical SE`          = fmt_num(ols_se, 3),
+  `FWL bootstrap SE`       = fmt_num(fwl_se_boot, 3),
+  `Absolute difference`    = fmt_num(abs(ols_coef - fwl_coef), 8)
+)
+
+write_booktabs(tab_fwl_check, file.path(path_tables, "tab_fwl_check.tex"), align = "ccccc")
 
 # 5) Next, we build the comparison table with all components -------------------
 
@@ -333,12 +342,17 @@ peaks_gender$peak_men
 peaks_gender$peak_women
 
 # Plot the predicted profiles
+
+# Find the most common category for each control variable
 modal_estrato <- names(sort(table(geih$cat_estrato), decreasing = TRUE))[1]
 modal_educ    <- names(sort(table(geih$cat_educ), decreasing = TRUE))[1]
 modal_formal  <- as.integer(names(sort(table(geih$bin_formal), decreasing = TRUE))[1])
 modal_relab   <- names(sort(table(geih$cat_relab), decreasing = TRUE))[1]
+
+# For a numeric variable (hours), use the median instead of the mode
 median_hours  <- median(geih$num_hours)
 
+# Build a table of hypothetical people
 grid_profile <- expand.grid(
   num_age    = seq(18, 80, by = 1),
   bin_female = c(0, 1),
@@ -355,6 +369,7 @@ grid_profile <- expand.grid(
     cat_gender  = if_else(bin_female == 1, "Mujer", "Hombre")
   )
 
+# Ask the already-fitted model to predict log-income 
 grid_profile$num_pred <- predict(m_gap_profile, newdata = grid_profile)
 
 fig_gap_profiles <- ggplot(grid_profile, aes(x = num_age, y = num_pred, color = cat_gender)) +
@@ -380,8 +395,6 @@ fig_gap_profiles <- ggplot(grid_profile, aes(x = num_age, y = num_pred, color = 
     plot.caption  = element_text(hjust = 0.5, size = 8, color = "grey40")
   )
 
-fig_gap_profiles
-
 ggsave(file.path(path_figures, "fig_gap_profiles.pdf"), fig_gap_profiles,
        width = 7.2, height = 4.4)
 ggsave(file.path(path_figures, "fig_gap_profiles.png"), fig_gap_profiles,
@@ -404,7 +417,7 @@ tab_peaks_gender <- tibble(
 
 write_booktabs(tab_peaks_gender, file.path(path_tables, "tab_gender_peaks.tex"), align = "lcc")
 
-# 7) Save the models ------------------------------------------------------------
+# 7) Save the models -----------------------------------------------------------
 
 saveRDS(list(
   uncond    = m_gap_uncond,
