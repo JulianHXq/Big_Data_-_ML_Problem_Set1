@@ -1,10 +1,12 @@
 ##########################################################
 # 01_scrape_geih_chunks.R
 #
-# Scrapes the 10 GEIH 2018 Bogotá chunks hosted at
+# El proposito de este script es descargar los datos de la Encuesta GEIH 2018
+# en 10 chunks, y guardar un log de la descarga.
 # https://ignaciomsarmiento.github.io/GEIH2018_sample/
-# and the variable dictionary.
+# y la página de diccionario de variables:
 #
+# Características:
 # The listing pages (page1.html, ..., page10.html) are
 # dynamic: the HTML downloaded by read_html() does not
 # contain the table. JavaScript inserts it from
@@ -13,7 +15,7 @@
 # replicate that request rather than parsing an empty
 # shell.
 #
-# Politeness:
+# Politicas del servidor para evitar sobrecarga:
 # - 15-second pause between chunks
 # - cache to 00_data/ so later runs do not hit the server
 #
@@ -23,13 +25,17 @@
 # - 00_data/scrape_log.rds
 ##########################################################
 
+# Formato para guardar los datos descargados y el log de la descarga.
 path_raw <- file.path(path_data, "geih_raw.rds")
 path_dic <- file.path(path_data, "dictionary.rds")
 path_log <- file.path(path_data, "scrape_log.rds")
 
+#Página base de los datos  
 base_url <- "https://ignaciomsarmiento.github.io/GEIH2018_sample/"
 chunk_pause_sec <- 15
 
+# Funciones para descargar los datos y el diccionario de variables.
+# Función para descargar el diccionario de variables de la GEIH dede un HTML.
 scrape_dictionary <- function(base_url) {
   dic_url <- paste0(base_url, "dictionary.html")
   message("Scraping dictionary: ", dic_url)
@@ -63,6 +69,7 @@ resolve_chunk_table_url <- function(page_url) {
   url_absolute(include_path, page_url)
 }
 
+# Función para descargar un chunk de la GEIH desde un HTML.
 scrape_one_chunk <- function(chunk_id, base_url) {
   page_url <- paste0(base_url, "page", chunk_id, ".html")
   message("Resolving dynamic include for chunk ", chunk_id, ": ", page_url)
@@ -99,6 +106,7 @@ scrape_one_chunk <- function(chunk_id, base_url) {
   chunk
 }
 
+# Append de cada uno de los 10 chunks descargados, y guardar un log de la descarga.
 if (file.exists(path_raw) && file.exists(path_dic)) {
   message("Cache found in 00_data/. Skipping scrape. ",
           "Delete geih_raw.rds to force a new download.")
@@ -135,5 +143,6 @@ if (file.exists(path_raw) && file.exists(path_dic)) {
   message("Saved ", nrow(geih_raw), " rows to ", path_raw)
 }
 
+# Mensaje de confirmación de que se descargaron los 10 chunks y el número de filas y columnas.
 stopifnot(n_distinct(geih_raw$id_chunk) == 10)
 message("Raw GEIH: ", nrow(geih_raw), " rows, ", ncol(geih_raw), " columns.")

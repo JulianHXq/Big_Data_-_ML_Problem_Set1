@@ -1,22 +1,21 @@
 ##########################################################
 # Master script
 #
-# Running this file reproduces all results in the repository.
-#
-# From an interactive R session, with the working directory
-# at the project root:
+# Ejecutar este archivo reproduce todos los resultados en el repositorio.+
+# de una session interactiva de R, con el directorio de trabajo
+# Desde la raiz del proyecto, run:
 #   source("01_code/00_rundirectory.R")
 #
-# Or from the command line:
+# O desde la linea de comandos, run:
 #   Rscript 01_code/00_rundirectory.R
 #
 # Authors:
-# - Julian Herrera
+# - Julian Herrera 
 # - Andres Silva
 # - Valentina Vera
 #
-# Course: Ms Economía PEG — Big Data and Machine Learning
-#         for Applied Economics, Universidad de los Andes
+# Cutso: Ms Economía PEG — Big Data and Machine Learning
+#         , Universidad de los Andes
 ##########################################################
 
 args <- commandArgs(trailingOnly = FALSE)
