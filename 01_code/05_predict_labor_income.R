@@ -22,6 +22,9 @@ align_to_train <- function(newdata, train) {
   }
   newdata
 }
+###
+
+
 
 db_train <- geih |> filter(bin_train == 1) |> drop_unused_levels()
 db_valid <- geih |> filter(bin_train == 0) |> align_to_train(db_train)
@@ -35,23 +38,40 @@ db_valid <- db_valid |>
 n_valid_dropped <- n_valid_raw - nrow(db_valid)
 
 formulas <- list(
+  # Section 1
   s1_uncond = num_log_income ~ num_age + num_age2,
-  s1_cond   = num_log_income ~ num_age + num_age2 + num_hours + cat_relab,
-  s2_uncond = num_log_income ~ bin_female,
-  s2_pref   = num_log_income ~ bin_female + num_age + num_age2 + cat_educ +
+  
+  s1_cond = num_log_income ~ num_age + num_age2 +
     num_hours + cat_relab,
-  p_mincer  = num_log_income ~ bin_female + num_age + num_age2 + cat_educ +
-    num_hours + cat_relab + bin_formal,
-  p_firm    = num_log_income ~ bin_female + num_age + num_age2 + cat_educ +
-    num_hours + cat_relab + bin_formal + cat_size_firm + cat_estrato,
-  p_returns = num_log_income ~ bin_female * (num_age + num_age2 + cat_educ + num_hours) +
-    cat_relab + bin_formal,
-  p_flex    = num_log_income ~ bin_female + num_age + num_age2 + I(num_age^3) +
-    num_hours + num_hours2 + cat_educ + cat_relab + bin_formal + cat_size_firm,
-  p_hh      = num_log_income ~ bin_female * (num_age + num_age2 + num_minors) +
-    bin_head + cat_educ + num_hours + cat_relab + bin_formal,
-  p_overfit = num_log_income ~ bin_female * (poly(num_age, 5) + cat_educ + num_hours) +
-    cat_relab + bin_formal + cat_size_firm + num_minors + bin_head + cat_estrato
+  
+  # Section 2
+  s2_uncond = num_log_income ~ bin_female,
+  
+  s2_pref = num_log_income ~ bin_female + num_age + num_age2 +
+    cat_estrato + cat_educ + bin_formal + num_hours + cat_relab,
+  
+  # P1: Human capital / Mincer-inspired
+  p_humancap = num_log_income ~ cat_educ +
+    num_age + num_age2,
+  
+  # P2: Labor supply
+  p_labor = num_log_income ~ cat_educ +
+    num_age + num_age2 + num_hours,
+  
+  # P3: Labor-market segmentation
+  p_segment = num_log_income ~ cat_educ +
+    num_age + num_age2 + num_hours +
+    bin_formal + cat_relab,
+  
+  # P4: Firm characteristics
+  p_firm = num_log_income ~ cat_educ +
+    num_age + num_age2 + num_hours +
+    bin_formal + cat_relab + cat_size_firm,
+  
+  # P5: Gender heterogeneity in human-capital returns
+  p_gender = num_log_income ~ bin_female *
+    (cat_educ + num_age + num_age2) +
+    num_hours + bin_formal + cat_relab + cat_size_firm
 )
 
 model_labels <- c(
@@ -59,12 +79,11 @@ model_labels <- c(
   s1_cond   = "S1: Conditional age profile",
   s2_uncond = "S2: Unconditional gender gap",
   s2_pref   = "S2: Preferred gender gap",
-  p_mincer  = "P1: Add formality",
-  p_firm    = "P2: Add firm size and estrato",
-  p_returns = "P3: Gender-specific returns",
-  p_flex    = "P4: Cubic age and quadratic hours",
-  p_hh      = "P5: Household structure",
-  p_overfit = "P6: Flexible age, education, and hours"
+  p_humancap = "P1: Human capital",
+  p_labor    = "P2: Human capital + labor supply",
+  p_segment  = "P3: Labor market segmentation",
+  p_firm     = "P4: Firm characteristics",
+  p_gender   = "P5: Gender-specific human capital returns"
 )
 
 fit_and_score <- function(formula, train, valid) {
