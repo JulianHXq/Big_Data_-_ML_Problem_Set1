@@ -275,7 +275,7 @@ m_gap_fwl <- fwl_gender(geih, list_specs[[6]]$controls)
 
 tab_gap_final <- map_dfr(list_specs, function(spec) {
   message("  -> ", spec$name) # Print the model name
-  se_boot <- bootstrap_fwl_se(geih, spec$controls) # Extract the bootstrap SE
+  se_boot <- bootstrap_fwl_se(geih, spec$controls, n_boot = 5000) # Extract the bootstrap SE
   coef_f  <- coef(spec$model)["bin_female"] # Extract the bin_female coefficient
   tibble(
     cat_specification  = spec$name,
@@ -401,7 +401,7 @@ ggsave(file.path(path_figures, "fig_gap_profiles.png"), fig_gap_profiles,
        width = 7.2, height = 4.4, dpi = 300)
 
 # Build the confidence intervals
-ci_gender <- bootstrap_peaks_by_gender(geih, f_gap_profile)
+ci_gender <- bootstrap_peaks_by_gender(geih, f_gap_profile, n_boot = 5000)
 ci_gender$men
 ci_gender$women
 
